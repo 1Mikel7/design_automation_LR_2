@@ -62,6 +62,29 @@ module apb_master
         end
     endtask
 
+    function automatic [31:0] expected_state(input int n);
+        case (n)
+            0: expected_state = 32'h00010001;
+            1: expected_state = 32'h00010003;
+            2: expected_state = 32'h00010004;
+            3: expected_state = 32'h00010002;
+            4: expected_state = 32'h00030001;
+            5: expected_state = 32'h00040001;
+            6: expected_state = 32'h00020001;
+            default: expected_state = 32'hDEADBEEF;
+        endcase
+    endfunction
+
+    task test_full_cycle;
+        int n;
+        $display("--- test_full_cycle ---");
+        for (n = 0; n < 14; n++) begin
+            apb_read (BASE + OFF_STATE, rdata);
+            check(rdata, expected_state(n % 7), "state in cycle");
+            apb_write(BASE + OFF_CTRL, 32'h1);
+        end
+    endtask
+
     task test_one_step;
         $display("--- test_one_step ---");
         apb_write(BASE + OFF_CTRL, 32'h1);
@@ -94,6 +117,7 @@ module apb_master
         wait (presetn === 1'b1);
         repeat (5) @(posedge pclk);
 
+        test_full_cycle();
         test_reset_state();
         test_one_step();
         test_errors();
