@@ -87,6 +87,8 @@ module apb_master
 
     task test_one_step;
         $display("--- test_one_step ---");
+        apb_read (BASE + OFF_CTRL, rdata);
+        apb_write(BASE + OFF_CTRL, 32'h0);
         apb_write(BASE + OFF_CTRL, 32'h1);
         apb_read (BASE + OFF_STATE, rdata);
         check(rdata, 32'h00010003, "after NEXT: A=Red+Yellow B=Red");
