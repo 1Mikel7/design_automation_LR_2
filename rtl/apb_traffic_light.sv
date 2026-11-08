@@ -31,7 +31,10 @@ module apb_traffic_light
             3'd4:    lamps = {RY, R }; // A=R, B=RY
             3'd5:    lamps = {G,  R }; // A=R, B=G
             3'd6:    lamps = {Y,  R }; // A=R, B=Y
+            // verilator coverage_off
             default: lamps = {R,  R };
+            // verilator coverage_on
+
         endcase
     end
 
@@ -93,7 +96,9 @@ module apb_traffic_light
                     apb_st <= APB_SETUP;
                 end
             end
+            // verilator coverage_off
             default: begin pslverr <= 1'b1; apb_st <= APB_SETUP; end
+            // verilator coverage_on
         endcase
     end
 endmodule
