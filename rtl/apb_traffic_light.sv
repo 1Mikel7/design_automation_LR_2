@@ -20,6 +20,7 @@ module apb_traffic_light
 
     logic [2:0]  phase;
     logic [31:0] lamps;
+    logic [2:0] next_phase;
 
     always_comb begin
         case (phase)
@@ -32,6 +33,11 @@ module apb_traffic_light
             3'd6:    lamps = {Y,  R }; // A=R, B=Y
             default: lamps = {R,  R };
         endcase
+    end
+
+    always_comb begin
+        if (phase == 3'd6) next_phase = 3'd0;
+        else               next_phase = phase + 3'd1;
     end
 
     always @(posedge pclk)
@@ -50,7 +56,24 @@ module apb_traffic_light
             end
             APB_W_ENABLE: begin
                 if (psel && penable && pwrite) begin
-                    pready <= 1'b1; apb_st <= APB_SETUP;
+                                        pready <= 1'b1;
+                    case (paddr[7:0])
+                        ADDR_CTRL: begin
+                            if (pwdata[0]) begin
+                                phase <= next_phase;
+                                $display("[DUT   ] %t CTRL  NEXT: phase %0d -> %0d", $time, phase, next_phase);
+                            end
+                        end
+                        ADDR_STATE: begin
+                            pslverr <= 1'b1;
+                            $display("[DUT   ] %t WRITE to read-only STATE -> PSLVERR", $time);
+                        end
+                        default: begin
+                            pslverr <= 1'b1;
+                            $display("[DUT   ] %t WRITE to bad addr -> PSLVERR", $time);
+                        end
+                    endcase
+                    apb_st <= APB_SETUP;
                 end
             end
             APB_R_ENABLE: begin

@@ -62,6 +62,27 @@ module apb_master
         end
     endtask
 
+    task test_one_step;
+        $display("--- test_one_step ---");
+        apb_write(BASE + OFF_CTRL, 32'h1);
+        apb_read (BASE + OFF_STATE, rdata);
+        check(rdata, 32'h00010003, "after NEXT: A=Red+Yellow B=Red");
+    endtask
+
+    task test_errors;
+        logic [31:0] saved_state;
+        $display("--- test_errors ---");
+        apb_read(BASE + OFF_STATE, saved_state);
+        apb_write(BASE + OFF_STATE, 32'hFFFF_FFFF);
+        check({31'b0, last_slverr}, 32'h1, "write STATE -> PSLVERR");
+        apb_write(BASE + 32'h08, 32'h1);
+        check({31'b0, last_slverr}, 32'h1, "write bad addr -> PSLVERR");
+        apb_read(BASE + 32'h08, rdata);
+        check({31'b0, last_slverr}, 32'h1, "read bad addr -> PSLVERR");
+        apb_read(BASE + OFF_STATE, rdata);
+        check(rdata, saved_state, "state not changed by errors");
+    endtask
+
     task test_reset_state;
         $display("--- test_reset_state ---");
         apb_read(BASE + OFF_STATE, rdata);
@@ -74,6 +95,8 @@ module apb_master
         repeat (5) @(posedge pclk);
 
         test_reset_state();
+        test_one_step();
+        test_errors();
 
         repeat (10) @(posedge pclk);
         if (errors == 0) $display("[RESULT] ALL TESTS PASSED");
