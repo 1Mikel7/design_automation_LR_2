@@ -1,0 +1,3 @@
+`verilator_config
+coverage_off -file "*tb/apb_master.sv"
+coverage_off -file "*tb/top.sv"
